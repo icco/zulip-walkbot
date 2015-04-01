@@ -17,6 +17,11 @@ get '/' do
   erb :index
 end
 
+get '/weather.json' do
+  content_type :json
+  weather
+end
+
 def weather
   # Recurse Center Location:
   # http://www.latlong.net/ translation of 455 Broadway New York, NY 10013
