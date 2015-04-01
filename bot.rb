@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'bundler'
-Bundler.setup(:default, ENV['RACK_ENV'] || :development)
+Bundler.require(:default, ENV['RACK_ENV'] || :development)
 require 'net/http'
 
 # Zulip API Docs: https://zulip.com/api/endpoints/
