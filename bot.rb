@@ -1,25 +1,34 @@
-require 'rubygems'
-require 'bundler'
-Bundler.require(:default, ENV['RACK_ENV'] || :development)
-require 'open-uri'
+require "rubygems"
+require "bundler"
+Bundler.require(:default, ENV["RACK_ENV"] || :development)
+
+require "net/https"
+require "open-uri"
 
 
 # Zulip API Docs: https://zulip.com/api/endpoints/
 # Forcast.io Docs: https://developer.forecast.io/docs/v2
 
 configure do
-  BOT_EMAIL_ADDRESS = ENV['BOT_EMAIL_ADDRESS']
-  BOT_API_KEY = ENV['BOT_API_KEY']
-  WEATHER_KEY = ENV['FORECASTIO_KEY']
+  BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
+  BOT_API_KEY = ENV["BOT_API_KEY"]
+  WEATHER_KEY = ENV["FORECASTIO_KEY"]
+  @queue_id, @last_msg_id = register
 end
 
-get '/' do
+get "/" do
   erb :index
 end
 
-get '/weather.json' do
+get "/weather.json" do
   content_type :json
-  weather
+  weather.to_json
+end
+
+get "/poll" do
+  @queue_id, @last_msg_id = register if @queue_id.nil?
+
+
 end
 
 def weather
@@ -28,5 +37,40 @@ def weather
   lat = "40.720780"
   long = "-74.001119"
   forecast_url = "https://api.forecast.io/forecast/#{WEATHER_KEY}/#{lat},#{long}"
-  return open(forecast_url).read
+  return JSON.parse(open(forecast_url).read)
+end
+
+def register
+  uri = URI("https://api.zulip.com/v1/register")
+
+  Net::HTTP.start(
+    uri.host,
+    uri.port,
+    :use_ssl => uri.scheme == "https"
+  ) do |http|
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.set_form_data({'event_types' => '["message"]'})
+    request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
+
+    response = http.request(request)
+
+    puts response
+    body = JSON.parse(response.body)
+
+    if body['result'].eql? 'success'
+      return [body['queue_id'], body['last_event_id']]
+    end
+  end
+
+  return nil
+end
+
+def ftoc f
+  return (((f - 32) * 5) / 9)
+end
+
+def format_weather weather_blob
+  current = weather_blob["currently"]
+  # Long strings are long.
+  return "Currently #{current["summary"]} and #{current["apparentTemperature"].to_f}&deg;F / #{ftoc(current["apparentTemperature"].to_f)}&deg;C"
 end
