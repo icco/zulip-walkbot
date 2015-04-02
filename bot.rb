@@ -54,11 +54,11 @@ def get_most_recent_msgs queue_id, last_msg_id
 
     response = http.request(request)
     body = JSON.parse(response.body)
-    puts "Polled with #{params.inspect}."
+    p "Polled with #{params.inspect}."
 
     if body['result'].eql? 'success'
       ev = body['events']
-      puts "Got #{ev.count} results."
+      p "Got #{ev.count} results."
       return ev
     else
       p body
