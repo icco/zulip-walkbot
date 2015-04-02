@@ -41,6 +41,7 @@ def get_most_recent_msgs queue_id, last_msg_id
   params = {
     "queue_id" => queue_id,
     "last_event_id" => last_msg_id,
+    "dont_block" => true,
   }
   uri.query = URI.encode_www_form(params)
   Net::HTTP.start(
