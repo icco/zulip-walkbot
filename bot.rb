@@ -213,13 +213,16 @@ get "/poll" do
       response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
       p response
 
-      response.each do |msg|
-        @last_msg_id = msg["id"]
-        content = msg["content"]
-        stream = msg["display_recipient"]
-        topic = msg["subject"]
-        if content =~ /WalkBot/i
-          p stream, topic, content
+      response.each do |ev|
+        if ev["type"] == "message"
+          msg = ev["message"]
+          @last_msg_id = msg["id"]
+          content = msg["content"]
+          stream = msg["display_recipient"]
+          topic = msg["subject"]
+          if content =~ /WalkBot/i
+            p stream, topic, content
+          end
         end
       end
     end
