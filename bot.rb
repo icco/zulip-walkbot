@@ -56,7 +56,9 @@ def get_most_recent_msgs queue_id, last_msg_id
     body = JSON.parse(response.body)
 
     if body['result'].eql? 'success'
-      return body['events']
+      ev = body['events']
+      puts "Polled with #{params.inspect}, got #{ev.count} results."
+      return ev
     else
       p body
     end
