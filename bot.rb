@@ -172,7 +172,7 @@ get "/poll" do
   @queue_id, @last_msg_id = register if @queue_id.nil?
 
   content_type :json
-  get_most_recent_msgs(@queue_id, @last_msg_id).to_json
+  get_most_recent_msgs(@queue_id, @last_msg_id - 10).to_json
 end
 
 after do
