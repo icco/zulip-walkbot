@@ -38,30 +38,30 @@ def get_most_recent_msgs queue_id, last_msg_id
   #  -d "queue_id=1375801870:2942" \
   #  -d "last_event_id=-1"
   uri = URI("https://api.zulip.com/v1/events")
+  params = {
+    "queue_id" => queue_id,
+    "last_event_id" => last_msg_id,
+  }
+  uri.query = URI.encode_www_form(params)
   Net::HTTP.start(
     uri.host,
     uri.port,
     :use_ssl => uri.scheme == "https"
   ) do |http|
     request = Net::HTTP::Get.new(uri.request_uri)
-    request.set_form_data({
-      "queue_id" => @queue_id,
-      "last_event_id" => @last_msg_id,
-    })
     request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
     response = http.request(request)
-
-    puts response
     body = JSON.parse(response.body)
 
     if body['result'].eql? 'success'
       return body['events']
     else
       p body
-      return nil
     end
   end
+
+  return nil
 end
 
 def weather
@@ -86,12 +86,12 @@ def register
     request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
     response = http.request(request)
-
-    puts response
     body = JSON.parse(response.body)
 
     if body['result'].eql? 'success'
       return [body['queue_id'], body['last_event_id']]
+    else
+      p body
     end
   end
 
