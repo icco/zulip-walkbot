@@ -149,6 +149,44 @@ def format_weather weather_blob
   ]
 end
 
+def post_message stream, topic, message
+  # curl https://api.zulip.com/v1/messages \
+  #    -u BOT_EMAIL_ADDRESS:BOT_API_KEY \
+  #    -d "type=stream" \
+  #    -d "to=Denmark" \
+  #    -d "subject=Castle" \
+  #    -d "content=Something is rotten in the state of Denmark."
+
+  uri = URI("https://api.zulip.com/v1/messages")
+
+  Net::HTTP.start(
+    uri.host,
+    uri.port,
+    :use_ssl => uri.scheme == "https"
+  ) do |http|
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.set_form_data({
+      type: "stream",
+      to: stream,
+      subject: topic,
+      content: message,
+    })
+    request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
+
+    response = http.request(request)
+    body = JSON.parse(response.body)
+
+    if body["result"].eql? "success"
+      id = [body["max_message_id"], body["last_event_id"]].max
+      return [body["queue_id"], id]
+    else
+      p body
+    end
+  end
+
+  return nil
+end
+
 configure do
   BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
   BOT_API_KEY = ENV["BOT_API_KEY"]
@@ -174,6 +212,16 @@ get "/poll" do
     while true do
       response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
       p response
+
+      response.each do |msg|
+        @last_msg_id = msg["id"]
+        content = msg["content"]
+        stream = msg["display_recipient"]
+        topic = msg["subject"]
+        if content =~ /WalkBot/i
+          p stream, topic, content
+        end
+      end
     end
   end
 
