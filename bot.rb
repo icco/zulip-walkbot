@@ -9,27 +9,58 @@ require "open-uri"
 # Zulip API Docs: https://zulip.com/api/endpoints/
 # Forcast.io Docs: https://developer.forecast.io/docs/v2
 
-configure do
-  BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
-  BOT_API_KEY = ENV["BOT_API_KEY"]
-  WEATHER_KEY = ENV["FORECASTIO_KEY"]
-  @queue_id, @last_msg_id = register
+def subscribe_all
+  return subscribe(get_streams)
 end
 
-get "/" do
-  erb :index
+def subscribe streams
+  streams.map! {|s| {name: s} }
+
+  uri = URI("https://api.zulip.com/v1/users/me/subscriptions")
+  Net::HTTP.start(
+    uri.host,
+    uri.port,
+    :use_ssl => uri.scheme == "https"
+  ) do |http|
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.set_form_data({subscriptions: streams})
+    request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
+
+    response = http.request(request)
+    body = JSON.parse(response.body)
+
+    if body['result'].eql? 'success'
+      return true
+    else
+      p body
+    end
+  end
+
+  return false
 end
 
-get "/weather.json" do
-  content_type :json
-  weather.to_json
-end
+def get_streams
+  uri = URI("https://api.zulip.com/v1/streams")
+  Net::HTTP.start(
+    uri.host,
+    uri.port,
+    :use_ssl => uri.scheme == "https"
+  ) do |http|
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
-get "/poll" do
-  @queue_id, @last_msg_id = register if @queue_id.nil?
+    response = http.request(request)
+    body = JSON.parse(response.body)
 
-  content_type :json
-  get_most_recent_msgs(@queue_id, @last_msg_id).to_json
+    if body['result'].eql? 'success'
+      ev = body['streams']
+      return ev.map {|s| s['name'] }
+    else
+      p body
+    end
+  end
+
+  return []
 end
 
 def get_most_recent_msgs queue_id, last_msg_id
@@ -115,4 +146,29 @@ def format_weather weather_blob
     ftoc(current["apparentTemperature"].to_f),
     weather_blob["minutely"]["summary"].downcase,
   ]
+end
+
+configure do
+  BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
+  BOT_API_KEY = ENV["BOT_API_KEY"]
+  WEATHER_KEY = ENV["FORECASTIO_KEY"]
+
+  subscribe_all
+  @queue_id, @last_msg_id = register
+end
+
+get "/" do
+  erb :index
+end
+
+get "/weather.json" do
+  content_type :json
+  weather.to_json
+end
+
+get "/poll" do
+  @queue_id, @last_msg_id = register if @queue_id.nil?
+
+  content_type :json
+  get_most_recent_msgs(@queue_id, @last_msg_id).to_json
 end
