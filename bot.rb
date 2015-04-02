@@ -141,7 +141,7 @@ end
 def format_weather weather_blob
   current = weather_blob["currently"]
   # Long strings are long.
-  return "Currently %s and %0.1f&deg;F / %.1f&deg;C. It will be %s" % [
+  return "Currently %s and %0.1f°F / %.1f°C. It will be %s" % [
     current["summary"],
     current["apparentTemperature"].to_f,
     ftoc(current["apparentTemperature"].to_f),
@@ -177,14 +177,14 @@ def post_message stream, topic, message
     body = JSON.parse(response.body)
 
     if body["result"].eql? "success"
-      id = [body["max_message_id"], body["last_event_id"]].max
-      return [body["queue_id"], id]
+      puts "Posted to #{stream}/#{topic}: #{message}"
+      return true
     else
       p body
     end
   end
 
-  return nil
+  return false
 end
 
 configure do
@@ -211,7 +211,6 @@ get "/poll" do
   thr = Thread.new do
     while true do
       response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
-      p response
 
       response.each do |ev|
         if ev["type"] == "message"
