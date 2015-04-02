@@ -122,10 +122,9 @@ def register
     response = http.request(request)
     body = JSON.parse(response.body)
 
+    p body
     if body['result'].eql? 'success'
       return [body['queue_id'], body['last_event_id']]
-    else
-      p body
     end
   end
 
