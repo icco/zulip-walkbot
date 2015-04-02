@@ -187,33 +187,6 @@ def post_message stream, topic, message
   return false
 end
 
-def create_polling_thread queue_id, last_msg_id
-  thr = Thread.new(queue_id, last_msg_id) do |queue_id, last_msg_id|
-
-    raise "Queue ID was nil" if queue_id.nil?
-    last_msg_id = -1 if last_msg_id.nil?
-
-    while true do
-      p "Checking for messages."
-      $stdout.flush
-      response = get_most_recent_msgs(queue_id, last_msg_id, true)
-
-      response.each do |ev|
-        if ev["type"] == "message"
-          msg = ev["message"]
-          last_msg_id = msg["id"]
-          content = msg["content"]
-          stream = msg["display_recipient"]
-          topic = msg["subject"]
-          if content =~ /WalkBot/i
-            post_message(stream, topic, format_weather(weather))
-          end
-        end
-      end
-    end
-  end
-end
-
 configure do
   BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
   BOT_API_KEY = ENV["BOT_API_KEY"]
@@ -221,7 +194,6 @@ configure do
 
   subscribe_all
   @queue_id, @last_msg_id = register
-  create_polling_thread(@queue_id, @last_msg_id)
 end
 
 get "/" do
@@ -234,19 +206,29 @@ get "/weather.json" do
 end
 
 get "/poll" do
-  Thread.list.each do |t|
-    t.kill
+  @queue_id, @last_msg_id = register if @queue_id.nil?
+
+  thr = Thread.new do
+    while true do
+      response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
+
+      response.each do |ev|
+        if ev["type"] == "message"
+          msg = ev["message"]
+          @last_msg_id = msg["id"]
+          content = msg["content"]
+          stream = msg["display_recipient"]
+          topic = msg["subject"]
+          if content =~ /WalkBot/i
+            post_message(stream, topic, format_weather(weather))
+          end
+        end
+      end
+    end
   end
 
-  @queue_id, @last_msg_id = register if @queue_id.nil?
-  create_polling_thread(@queue_id, @last_msg_id)
-
-  redirect "/status.json"
-end
-
-get "/status.json" do
   content_type :json
-  Thread.list.to_json
+  "running - #{thr.inspect}"
 end
 
 after do
