@@ -72,9 +72,10 @@ end
 def format_weather weather_blob
   current = weather_blob["currently"]
   # Long strings are long.
-  return "Currently %s and %0.1f&deg;F / %.1f&deg;C" % [
+  return "Currently %s and %0.1f&deg;F / %.1f&deg;C. It will be %s" % [
     current["summary"],
     current["apparentTemperature"].to_f,
-    ftoc(current["apparentTemperature"].to_f)
+    ftoc(current["apparentTemperature"].to_f),
+    weather_blob["minutely"]["summary"]
   ]
 end
