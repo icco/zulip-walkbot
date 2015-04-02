@@ -76,6 +76,6 @@ def format_weather weather_blob
     current["summary"],
     current["apparentTemperature"].to_f,
     ftoc(current["apparentTemperature"].to_f),
-    weather_blob["minutely"]["summary"]
+    weather_blob["minutely"]["summary"].downcase,
   ]
 end
