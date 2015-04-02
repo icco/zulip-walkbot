@@ -37,6 +37,7 @@ def get_most_recent_msgs queue_id, last_msg_id
   #  -u othello-bot@example.com:a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5 \
   #  -d "queue_id=1375801870:2942" \
   #  -d "last_event_id=-1"
+  uri = URI("https://api.zulip.com/v1/events")
   Net::HTTP.start(
     uri.host,
     uri.port,
