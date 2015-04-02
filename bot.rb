@@ -57,6 +57,9 @@ def get_most_recent_msgs queue_id, last_msg_id
 
     if body['result'].eql? 'success'
       return body['events']
+    else
+      p body
+      return nil
     end
   end
 end
