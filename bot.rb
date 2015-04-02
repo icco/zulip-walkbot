@@ -221,7 +221,7 @@ get "/poll" do
           stream = msg["display_recipient"]
           topic = msg["subject"]
           if content =~ /WalkBot/i
-            p stream, topic, content
+            post_message(stream, topic, format_weather(weather))
           end
         end
       end
