@@ -63,7 +63,7 @@ def get_streams
   return []
 end
 
-def get_most_recent_msgs queue_id, last_msg_id
+def get_most_recent_msgs queue_id, last_msg_id, block=false
   # curl -G https://api.zulip.com/v1/events \
   #  -u othello-bot@example.com:a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5 \
   #  -d "queue_id=1375801870:2942" \
@@ -72,7 +72,7 @@ def get_most_recent_msgs queue_id, last_msg_id
   params = {
     "queue_id" => queue_id,
     "last_event_id" => last_msg_id,
-    "dont_block" => true,
+    "dont_block" => !block,
   }
   uri.query = URI.encode_www_form(params)
   Net::HTTP.start(
@@ -171,8 +171,12 @@ end
 get "/poll" do
   @queue_id, @last_msg_id = register if @queue_id.nil?
 
+  thr = Tread.new do
+    get_most_recent_msgs(@queue_id, @last_msg_id, false)
+  end
+
   content_type :json
-  get_most_recent_msgs(@queue_id, @last_msg_id - 10).to_json
+  "running - #{thr.inspect}"
 end
 
 after do
