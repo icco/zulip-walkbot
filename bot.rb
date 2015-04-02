@@ -187,6 +187,27 @@ def post_message stream, topic, message
   return false
 end
 
+def create_polling_thread queue_id, last_msg_id
+  thr = Thread.new do
+    while true do
+      response = get_most_recent_msgs(queue_id, last_msg_id, true)
+
+      response.each do |ev|
+        if ev["type"] == "message"
+          msg = ev["message"]
+          last_msg_id = msg["id"]
+          content = msg["content"]
+          stream = msg["display_recipient"]
+          topic = msg["subject"]
+          if content =~ /WalkBot/i
+            post_message(stream, topic, format_weather(weather))
+          end
+        end
+      end
+    end
+  end
+end
+
 configure do
   BOT_EMAIL_ADDRESS = ENV["BOT_EMAIL_ADDRESS"]
   BOT_API_KEY = ENV["BOT_API_KEY"]
@@ -194,6 +215,7 @@ configure do
 
   subscribe_all
   @queue_id, @last_msg_id = register
+  create_polling_thread(@queue_id, @last_msg_id)
 end
 
 get "/" do
@@ -207,28 +229,14 @@ end
 
 get "/poll" do
   @queue_id, @last_msg_id = register if @queue_id.nil?
+  create_polling_thread(@queue_id, @last_msg_id)
 
-  thr = Thread.new do
-    while true do
-      response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
+  redirect "/status.json"
+end
 
-      response.each do |ev|
-        if ev["type"] == "message"
-          msg = ev["message"]
-          @last_msg_id = msg["id"]
-          content = msg["content"]
-          stream = msg["display_recipient"]
-          topic = msg["subject"]
-          if content =~ /WalkBot/i
-            post_message(stream, topic, format_weather(weather))
-          end
-        end
-      end
-    end
-  end
-
+get "/status.json" do
   content_type :json
-  "running - #{thr.inspect}"
+  Thread.list.to_json
 end
 
 after do
