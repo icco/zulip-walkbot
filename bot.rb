@@ -85,10 +85,9 @@ def get_most_recent_msgs queue_id, last_msg_id, block=false
 
     response = http.request(request)
     body = JSON.parse(response.body)
-    puts "Polled #{uri.to_s} with #{params.inspect}."
+    puts "Polled #{uri.to_s}."
 
     if body["result"].eql? "success"
-      p body
       ev = body["events"]
       puts "Got #{ev.count} results."
       return ev
@@ -118,7 +117,7 @@ def register
     :use_ssl => uri.scheme == "https"
   ) do |http|
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.set_form_data({})
+    request.set_form_data({'event_types' => ["message"].to_json}))
     request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
     response = http.request(request)
