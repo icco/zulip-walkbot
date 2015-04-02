@@ -188,7 +188,11 @@ def post_message stream, topic, message
 end
 
 def create_polling_thread queue_id, last_msg_id
-  thr = Thread.new do
+  thr = Thread.new(queue_id, last_msg_id) do |queue_id, last_msg_id|
+
+    raise "Queue ID was nil" if queue_id.nil?
+    last_msg_id = -1 if last_msg_id.nil?
+
     while true do
       response = get_most_recent_msgs(queue_id, last_msg_id, true)
 
@@ -228,6 +232,10 @@ get "/weather.json" do
 end
 
 get "/poll" do
+  Thread.list.each do |t|
+    t.kill
+  end
+
   @queue_id, @last_msg_id = register if @queue_id.nil?
   create_polling_thread(@queue_id, @last_msg_id)
 
