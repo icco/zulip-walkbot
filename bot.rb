@@ -86,7 +86,7 @@ def register
     :use_ssl => uri.scheme == "https"
   ) do |http|
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.set_form_data({'event_types' => '["message"]'})
+    request.set_form_data({})
     request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
     response = http.request(request)
