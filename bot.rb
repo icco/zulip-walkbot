@@ -28,7 +28,36 @@ end
 get "/poll" do
   @queue_id, @last_msg_id = register if @queue_id.nil?
 
+  content_type :json
+  get_most_recent_msgs(@queue_id, @last_msg_id).to_json
+end
 
+def get_most_recent_msgs queue_id, last_msg_id
+  # curl -G https://api.zulip.com/v1/events \
+  #  -u othello-bot@example.com:a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5 \
+  #  -d "queue_id=1375801870:2942" \
+  #  -d "last_event_id=-1"
+  Net::HTTP.start(
+    uri.host,
+    uri.port,
+    :use_ssl => uri.scheme == "https"
+  ) do |http|
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request.set_form_data({
+      "queue_id" => @queue_id,
+      "last_event_id" => @last_msg_id,
+    })
+    request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
+
+    response = http.request(request)
+
+    puts response
+    body = JSON.parse(response.body)
+
+    if body['result'].eql? 'success'
+      return body['events']
+    end
+  end
 end
 
 def weather
