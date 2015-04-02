@@ -117,7 +117,7 @@ def register
     :use_ssl => uri.scheme == "https"
   ) do |http|
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.set_form_data({'event_types' => ["message"].to_json}))
+    request.set_form_data({'event_types' => ["message"].to_json})
     request.basic_auth(BOT_EMAIL_ADDRESS, BOT_API_KEY)
 
     response = http.request(request)
@@ -172,7 +172,8 @@ get "/poll" do
 
   thr = Thread.new do
     while true do
-      p get_most_recent_msgs(@queue_id, @last_msg_id, true)
+      response = get_most_recent_msgs(@queue_id, @last_msg_id, true)
+      p response
     end
   end
 
