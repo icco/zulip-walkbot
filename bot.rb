@@ -172,7 +172,9 @@ get "/poll" do
   @queue_id, @last_msg_id = register if @queue_id.nil?
 
   thr = Tread.new do
-    get_most_recent_msgs(@queue_id, @last_msg_id, false)
+    while true do
+      p get_most_recent_msgs(@queue_id, @last_msg_id, true)
+    end
   end
 
   content_type :json
