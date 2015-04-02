@@ -194,6 +194,8 @@ def create_polling_thread queue_id, last_msg_id
     last_msg_id = -1 if last_msg_id.nil?
 
     while true do
+      p "Checking for messages."
+      $stdout.flush
       response = get_most_recent_msgs(queue_id, last_msg_id, true)
 
       response.each do |ev|
