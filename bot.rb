@@ -125,7 +125,8 @@ def register
     body = JSON.parse(response.body)
 
     if body['result'].eql? 'success'
-      p body.keys
+      p body[:max_message_id]
+      p body[:last_event_id]
       return [body['queue_id'], body['last_event_id']]
     else
       p body
