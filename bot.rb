@@ -29,7 +29,7 @@ def subscribe streams
     response = http.request(request)
     body = JSON.parse(response.body)
 
-    if body['result'].eql? 'success'
+    if body["result"].eql? "success"
       return true
     else
       p body
@@ -52,9 +52,9 @@ def get_streams
     response = http.request(request)
     body = JSON.parse(response.body)
 
-    if body['result'].eql? 'success'
-      ev = body['streams']
-      return ev.map {|s| s['name'] }
+    if body["result"].eql? "success"
+      ev = body["streams"]
+      return ev.map {|s| s["name"] }
     else
       p body
     end
@@ -87,9 +87,9 @@ def get_most_recent_msgs queue_id, last_msg_id
     body = JSON.parse(response.body)
     puts "Polled with #{params.inspect}."
 
-    if body['result'].eql? 'success'
+    if body["result"].eql? "success"
       p body
-      ev = body['events']
+      ev = body["events"]
       puts "Got #{ev.count} results."
       return ev
     else
@@ -124,10 +124,10 @@ def register
     response = http.request(request)
     body = JSON.parse(response.body)
 
-    if body['result'].eql? 'success'
-      p body[:max_message_id]
-      p body[:last_event_id]
-      return [body['queue_id'], body['last_event_id']]
+    if body["result"].eql? "success"
+      p body["max_message_id"]
+      p body["last_event_id"]
+      return [body["queue_id"], body["last_event_id"]]
     else
       p body
     end
